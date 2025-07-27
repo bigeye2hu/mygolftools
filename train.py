@@ -7,6 +7,8 @@ from torchvision import transforms
 import os
 
 
+device = torch.device('cpu')  # 强制使用 CPU
+
 if __name__ == '__main__':
 
     # training configuration
@@ -26,7 +28,7 @@ if __name__ == '__main__':
                           dropout=False)
     freeze_layers(k, model)
     model.train()
-    model.cuda()
+    model = model.to(device)
 
     dataset = GolfDB(data_file='data/train_split_{}.pkl'.format(split),
                      vid_dir='data/videos_160/',
@@ -43,7 +45,7 @@ if __name__ == '__main__':
 
     # the 8 golf swing events are classes 0 through 7, no-event is class 8
     # the ratio of events to no-events is approximately 1:35 so weight classes accordingly:
-    weights = torch.FloatTensor([1/8, 1/8, 1/8, 1/8, 1/8, 1/8, 1/8, 1/8, 1/35]).cuda()
+    weights = torch.FloatTensor([1/8, 1/8, 1/8, 1/8, 1/8, 1/8, 1/8, 1/8, 1/35]).to(device)
     criterion = torch.nn.CrossEntropyLoss(weight=weights)
     optimizer = torch.optim.Adam(filter(lambda p: p.requires_grad, model.parameters()), lr=0.001)
 
@@ -55,7 +57,7 @@ if __name__ == '__main__':
     i = 0
     while i < iterations:
         for sample in data_loader:
-            images, labels = sample['images'].cuda(), sample['labels'].cuda()
+            images, labels = sample['images'].to(device), sample['labels'].to(device)
             logits = model(images)
             labels = labels.view(bs*seq_length)
             loss = criterion(logits, labels)
